@@ -1,0 +1,39 @@
+﻿<Page
+    x:Class="Mobile.Metrics.Example.Pages.HomePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Mobile.Metrics.Example.Pages"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Page.BottomAppBar>
+        <CommandBar>
+            <AppBarButton Label="Refresh" Icon="Refresh" Command="{Binding UpdateCommand}"/>
+        </CommandBar>
+    </Page.BottomAppBar>
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+
+        <TextBlock Margin="10" FontSize="35">
+            <Run Text="Customers : " />
+            <Run Text="{Binding Customers.Count}" />
+        </TextBlock>
+
+        <GridView Grid.Row="1" x:Name="CustomerListView" ItemsSource="{Binding Customers}" SelectionMode="None" IsItemClickEnabled="True" ItemClick="CustomerListView_ItemClick">
+            <GridView.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Width="100" Height="100" Background="Brown">
+                        <TextBlock Text="{Binding Name}" />
+                    </StackPanel>
+                </DataTemplate>
+            </GridView.ItemTemplate>
+        </GridView>
+        
+    </Grid>
+</Page>
