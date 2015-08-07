@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace Mobile.Metrics
 {
@@ -15,7 +16,7 @@ namespace Mobile.Metrics
         {
             try
             {
-                var task = Run();
+                var task = Run(args);
                 task.Wait();
             }
             catch (Exception e)
@@ -25,18 +26,73 @@ namespace Mobile.Metrics
             }
         }
 
-        private static async Task Run()
+        private static string FindSolution()
         {
-            var analyzer = new SolutionAnalyzer();
+            var files = Directory.GetFiles(Environment.CurrentDirectory).ToList();
+            return files.FirstOrDefault((f) => Path.GetExtension(f) == ".sln");
+        }
 
-            var analysis = await analyzer.Analyze(@"C:\Users\Alois Deniel\Documents\Mobile.Metrics\Example\Mobile.Metrics.Example\Mobile.Metrics.Example.sln");
+        private static async Task Run(string[] args)
+        {
+            var arguments = new Arguments();
+            if (CommandLine.Parser.Default.ParseArguments(args, arguments))
+            {
+                // Argument : Solution
 
-            var html = new HtmlReporter();
-            var json = new JsonReporter();
+                if (arguments.Solution == null)
+                {
+                    arguments.Solution = FindSolution();
+                }
 
-            await json.Generate(@"report.json", analysis);
-            await html.Generate(@"", analysis);
-            
+                if(arguments.Solution == null)
+                {
+                    throw new ArgumentException("No solution file found");
+                }
+
+                // Argument : Settings
+
+                var defaultSettingsPath = arguments.Solution.Replace(".sln", ".metrics");
+                if (arguments.Settings == null && File.Exists(defaultSettingsPath))
+                {
+                    var settings = File.ReadAllText(defaultSettingsPath);
+                    Settings.Global = JsonConvert.DeserializeObject<Settings>(settings);
+                }
+
+                if (arguments.Settings != null)
+                {
+                    var settings = File.ReadAllText(arguments.Settings);
+                    Settings.Global = JsonConvert.DeserializeObject<Settings>(settings);
+                }
+
+                // Argument : Output
+
+                if (arguments.Output == null)
+                {
+                    arguments.Output = Path.GetDirectoryName(arguments.Solution);
+                }
+
+                // Argument : Reporting
+
+                var reporting = arguments.Reporting.Split(',');
+                
+                // Analysis
+
+                var analyzer = new SolutionAnalyzer();
+
+                var analysis = await analyzer.Analyze(arguments.Solution);
+                
+                if (reporting.Contains("json"))
+                {
+                    var json = new JsonReporter();
+                    await json.Generate(arguments.Output + analysis.Metrics.Name.Replace(".sln",".json"), analysis);
+                }
+
+                if (reporting.Contains("html"))
+                {
+                    var html = new HtmlReporter();
+                    await html.Generate(arguments.Output + "\\", analysis);
+                }
+            }
         }
     }
 }

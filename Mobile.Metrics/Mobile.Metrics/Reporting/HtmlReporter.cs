@@ -18,6 +18,17 @@ namespace Mobile.Metrics.Reporting
         {
 
         }
+
+        public void ApplyTemplates(string output, string content, string solution)
+        {
+            content = content.Replace("{{SOLUTION}}", solution);
+            content = content.Replace("{{Settings.Name}}", Settings.Global.Name);
+            content = content.Replace("{{Settings.Colors}}", String.Format("[\"{0}\"]", String.Join("\",\"", Settings.Global.Colors)));
+
+            File.Delete(output);
+
+            File.WriteAllText(output, content);
+        }
         
         public async Task Generate(string output, Analysis metrics)
         {
@@ -27,18 +38,15 @@ namespace Mobile.Metrics.Reporting
             var htmlOutput = output + solution + ".html";
             var jsOutput = output + solution + ".Mobile.Metrics.js";
             var dataOutput = output + solution + ".Data.js";
+            
 
-            File.Delete(htmlOutput);
-            File.Delete(jsOutput);
-            File.Delete(dataOutput);
-
+            var jsContent = File.ReadAllText("./Views/Js/Mobile.Metrics.js");
             var dataContent = String.Format("var jsonReport = '{0}'; console.log(jsonReport); var report = JSON.parse(jsonReport);", json);
             var htmlContent = File.ReadAllText("./Views/Html/Mobile.Metrics.html");
-            htmlContent = htmlContent.Replace("{{SOLUTION}}", solution);
-            
-            File.Copy("./Views/Js/Mobile.Metrics.js", jsOutput);
-            File.WriteAllText(htmlOutput, htmlContent);
-            File.WriteAllText(dataOutput, dataContent);
+
+            ApplyTemplates(htmlOutput, htmlContent, solution);
+            ApplyTemplates(dataOutput, dataContent, solution);
+            ApplyTemplates(jsOutput, jsContent, solution);
         }
     }
 }

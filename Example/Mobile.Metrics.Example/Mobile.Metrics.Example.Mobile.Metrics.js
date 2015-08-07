@@ -1,4 +1,4 @@
-﻿var defaultActiveColors = {{Settings.Colors}};
+var defaultActiveColors = ["#3fB618","#2780E3","#9954BB","#FF7518","#FF0039"];
 
 // Utils ----------->
 

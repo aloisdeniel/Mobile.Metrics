@@ -66,7 +66,7 @@ namespace Mobile.Metrics.Analyzers.Files
         {
             var metrics = new FileMetrics(path);
 
-            metrics.Categories = new FileCategory[] { FileCategory.View, FileCategory.Layout };
+            metrics.Categories = new FileCategory[] { FileCategory.View, FileCategory.Layout, FileCategory.Code };
 
             using (var content = new StreamReader(path))
             {

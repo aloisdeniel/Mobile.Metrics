@@ -33,6 +33,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CommandLine, Version=1.9.71.2, Culture=neutral, PublicKeyToken=de6f01bd326f8c32, processorArchitecture=MSIL">
+      <HintPath>..\packages\CommandLineParser.1.9.71\lib\net45\CommandLine.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.CodeAnalysis, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.CodeAnalysis.Common.1.0.0\lib\net45\Microsoft.CodeAnalysis.dll</HintPath>
       <Private>True</Private>
@@ -102,6 +106,7 @@
     <Compile Include="Analyzers\Analysis.cs" />
     <Compile Include="Analyzers\Files\CSharpAnalyzer.cs" />
     <Compile Include="Analyzers\Files\XamlAnalyzer.cs" />
+    <Compile Include="Arguments.cs" />
     <Compile Include="DuplicateFinder\DuplicateEventArgs.cs" />
     <Compile Include="DuplicateFinder\DuplicateFinder.cs" />
     <Compile Include="DuplicateFinder\FileDuplicateFinder.cs" />
@@ -113,6 +118,7 @@
       <DependentUpon>Messages.resx</DependentUpon>
     </Compile>
     <Compile Include="Metrics\DuplicatedPortion.cs" />
+    <Compile Include="Settings.cs" />
     <Compile Include="Reporting\StringEnumsConverter.cs" />
     <Compile Include="Warnings\IWarningAnalyzer.cs" />
     <Compile Include="Warnings\Specifics\AmountOfCommentsAnalyzer.cs" />

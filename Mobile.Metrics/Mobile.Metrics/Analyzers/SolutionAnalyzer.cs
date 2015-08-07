@@ -22,7 +22,7 @@ namespace Mobile.Metrics.Analyzers
         
         private static SolutionWarningAnalyzer WarningAnalyzer = new SolutionWarningAnalyzer();
 
-        private string[] excludedFiles = new string[] { "/bin/", "/obj/", "\\bin\\", "\\obj\\", "AssemblyInfo.cs", ".g.cs", ".g.i.cs" };
+        private string[] excludedFiles = new string[] { "/bin/", "/obj/", "\\bin\\", "\\obj\\", "/appdata/", "\\appdata\\", "AssemblyInfo.cs", ".g.cs", ".g.i.cs" };
         private string[] duplicationFilesExt = new string[] { ".cs", ".xaml", ".xml" };
         private string[] excludedDuplicationFiles = new string[] { ".csproj", ".sln" };
         private string[] excludedDuplicationLinesStarts = new string[] { "using ", "namespace ", "//", "/*" };
