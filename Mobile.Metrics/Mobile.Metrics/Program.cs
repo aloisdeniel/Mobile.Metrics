@@ -30,12 +30,12 @@ namespace Mobile.Metrics
             var analyzer = new SolutionAnalyzer();
 
             var analysis = await analyzer.Analyze(@"C:\Users\Alois Deniel\Documents\Mobile.Metrics\Example\Mobile.Metrics.Example\Mobile.Metrics.Example.sln");
-            
+
             var html = new HtmlReporter();
             var json = new JsonReporter();
 
             await json.Generate(@"report.json", analysis);
-            await html.Generate(@"report.html", analysis);
+            await html.Generate(@"", analysis);
             
         }
     }

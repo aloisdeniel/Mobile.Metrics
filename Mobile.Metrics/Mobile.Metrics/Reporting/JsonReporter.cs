@@ -12,14 +12,19 @@ namespace Mobile.Metrics.Reporting
 {
     public class JsonReporter : IReporter
     {
-        public async Task Generate(string output, Analysis metrics)
+        public string GenerateJson(Analysis metrics)
         {
             var settings = new JsonSerializerSettings()
             {
                 NullValueHandling = NullValueHandling.Ignore,
             };
 
-            var json = JsonConvert.SerializeObject(metrics, Formatting.None, settings);
+            return JsonConvert.SerializeObject(metrics, Formatting.None, settings);
+        }
+
+        public async Task Generate(string output, Analysis metrics)
+        {
+            var json = this.GenerateJson(metrics);
 
             File.Delete(output);
 

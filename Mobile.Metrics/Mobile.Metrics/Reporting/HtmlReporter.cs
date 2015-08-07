@@ -12,6 +12,7 @@ namespace Mobile.Metrics.Reporting
 {
     public class HtmlReporter : IReporter
     {
+        private JsonReporter jsonReporter = new JsonReporter();
 
         public HtmlReporter()
         {
@@ -20,20 +21,24 @@ namespace Mobile.Metrics.Reporting
         
         public async Task Generate(string output, Analysis metrics)
         {
-            File.Delete(output);
+            var json = jsonReporter.GenerateJson(metrics).Replace("\\", "\\\\").Replace("'", "\\'");
+            var solution = metrics.Metrics.Name.Replace(".sln",String.Empty);
+
+            var htmlOutput = output + solution + ".html";
+            var jsOutput = output + solution + ".Mobile.Metrics.js";
+            var dataOutput = output + solution + ".Data.js";
+
+            File.Delete(htmlOutput);
+            File.Delete(jsOutput);
+            File.Delete(dataOutput);
+
+            var dataContent = String.Format("var jsonReport = '{0}'; console.log(jsonReport); var report = JSON.parse(jsonReport);", json);
+            var htmlContent = File.ReadAllText("./Views/Html/Mobile.Metrics.html");
+            htmlContent = htmlContent.Replace("{{SOLUTION}}", solution);
             
-            using (var template = new StreamReader("./Views/Html/Report.html.mustache"))
-            {
-                FormatCompiler compiler = new FormatCompiler();
-                Generator generator = compiler.Compile(await template.ReadToEndAsync());
-
-                string result = generator.Render(metrics.Metrics);
-
-                using (var file = new StreamWriter(output, true))
-                {
-                    await file.WriteAsync(result);
-                }
-            }     
+            File.Copy("./Views/Js/Mobile.Metrics.js", jsOutput);
+            File.WriteAllText(htmlOutput, htmlContent);
+            File.WriteAllText(dataOutput, dataContent);
         }
     }
 }
