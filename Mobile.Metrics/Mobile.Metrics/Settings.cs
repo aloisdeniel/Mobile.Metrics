@@ -11,8 +11,10 @@ namespace Mobile.Metrics
         public static Settings Default = new Settings()
         {
             Name = "Mobile.Metrics",
-            Colors = new string[] { "#2780E3", "#3fB618", "#9954BB", "#FF7518", "#FF0039" },
+            Colors = defaultColors,
         };
+
+        private readonly static string[] defaultColors = new string[] { "#2780E3", "#3fB618", "#9954BB", "#FF7518", "#FF0039" };
 
         private static volatile Settings instance;
         
@@ -35,7 +37,23 @@ namespace Mobile.Metrics
         }
 
         public string Name { get; set; }
+        
+        private string[] colors;
 
-        public string[] Colors { get; set; }
+        public string[] Colors
+        {
+            get {
+
+                if (colors == null)
+                    return defaultColors;
+
+                return colors;
+
+            }
+            set { colors = value; }
+        }
+
+
+        public string[] IgnoredProjects { get; set; }
     }
 }

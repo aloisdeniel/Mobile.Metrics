@@ -1,4 +1,5 @@
-﻿using Mobile.Metrics.Analyzers.Files;
+﻿using Microsoft.CodeAnalysis;
+using Mobile.Metrics.Analyzers.Files;
 using Mobile.Metrics.Metrics;
 using Mobile.Metrics.Warnings;
 using System;
@@ -41,46 +42,97 @@ namespace Mobile.Metrics.Analyzers
             }
 
             var ws = Microsoft.CodeAnalysis.MSBuild.MSBuildWorkspace.Create();
-            
-            var solution = await ws.OpenSolutionAsync(folderPath);
 
-            var solutionMetrics = new SolutionMetrics()
+            IEnumerable<Project> projects = new List<Project>();
+            string solutionPath = String.Empty;
+
+            try
             {
-                Path = solution.FilePath,
-            };
-
-            foreach (var project in solution.Projects)
+                var solution = await ws.OpenSolutionAsync(folderPath);
+                projects = solution.Projects;
+                solutionPath = solution.FilePath;
+                Console.WriteLine("Loaded solution");
+            }
+            catch (Exception)
             {
-                var projectMetrics = new ProjectMetrics()
-                {
-                    Name = project.Name,
-                    Path = project.FilePath,
-                };
+                Console.WriteLine("Can't load solution through CodeAnalysis, trying to load each project independently ...");
+                var slnContent = File.ReadAllText(folderPath);
 
-                // Files from a project
-                var projectPath = Path.GetDirectoryName(projectMetrics.Path);
-                var projectFilePaths = Directory.GetFiles(projectPath, "*",SearchOption.AllDirectories).ToList();
-                var documentsPaths = project.Documents.Where((d) => !projectFilePaths.Contains(d.FilePath)).Select((d) => d.FilePath);
-                projectFilePaths.AddRange(documentsPaths);
-                
-                foreach (var doc in projectFilePaths)
+                solutionPath = folderPath;
+                var solutionDir = Path.GetDirectoryName(folderPath);
+                var fpaths = Directory.GetFiles(solutionDir, "*.csproj", SearchOption.AllDirectories).ToList();
+                var loadedProjects = new List<Project>();
+                foreach (var p in fpaths)
                 {
-                    if (!excludedFiles.Any((f) => doc.ToLowerInvariant().Contains(f)))
+                    if(!String.IsNullOrEmpty(p) && slnContent.Contains(Path.GetFileName(p)))
                     {
-                        var m = await this.AnalyzeFile(doc);
-                        if (m != null)
+                        try
                         {
-                            projectMetrics.Files.Add(m);
+                            var project = await ws.OpenProjectAsync(p);
+                            loadedProjects.Add(project);
+                            Console.WriteLine("Loaded project : {0}", p);
                         }
-
-                        if (duplicationFilesExt.Any((f) => Path.GetExtension(doc).Contains(f)) && !excludedDuplicationFiles.Any((f) => Path.GetFileName(doc).Contains(f)))
+                        catch (Exception e2)
                         {
-                            duplicationFinder.ReadFile(doc);
+                            Console.WriteLine("Can't load project : {0} -> {1}", p, e2.Message);
                         }
                     }
                 }
+                projects = loadedProjects;
+            }
+            
+            var solutionMetrics = new SolutionMetrics()
+            {
+                Path = solutionPath,
+            };
 
-                solutionMetrics.Projects.Add(projectMetrics);
+            foreach (var project in projects)
+            {
+                if(project != null && !String.IsNullOrEmpty(project.FilePath) && !Settings.Global.IgnoredProjects.Contains(Path.GetFileName(project.FilePath)))
+                {
+                    var projectMetrics = new ProjectMetrics()
+                    {
+                        Name = project.Name,
+                        Path = project.FilePath,
+                    };
+
+                    Console.WriteLine("Analysing project {0}", projectMetrics.Name);
+
+                    // Files from a project
+                    var projectPath = Path.GetDirectoryName(projectMetrics.Path);
+                    var projectFilePaths = Directory.GetFiles(projectPath, "*", SearchOption.AllDirectories).ToList();
+                    var documentsPaths = project.Documents.Where((d) => !projectFilePaths.Contains(d.FilePath)).Select((d) => d.FilePath);
+                    projectFilePaths.AddRange(documentsPaths);
+
+                    foreach (var doc in projectFilePaths)
+                    {
+                        try
+                        {
+                            if (!excludedFiles.Any((f) => doc.ToLowerInvariant().Contains(f.ToLowerInvariant())))
+                            {
+                                Console.WriteLine(" -> File {0} ...", doc);
+                                
+                                var m = await this.AnalyzeFile(doc);
+                                if (m != null)
+                                {
+                                    projectMetrics.Files.Add(m);
+                                }
+
+                                if (duplicationFilesExt.Any((f) => Path.GetExtension(doc).Contains(f)) && !excludedDuplicationFiles.Any((f) => Path.GetFileName(doc).Contains(f)))
+                                {
+                                    duplicationFinder.ReadFile(doc);
+                                }
+
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            Console.WriteLine(" -> Failed to analyze file {0} ...", doc);
+                        }
+                    }
+
+                    solutionMetrics.Projects.Add(projectMetrics);
+                }
             }
 
             result.Metrics = solutionMetrics;
@@ -114,10 +166,7 @@ namespace Mobile.Metrics.Analyzers
                 }
                 
             };
-            var totalDuplication = duplicationFinder.FindDuplicates () ;
-
-            Console.WriteLine("Found {0} duplicates");
-            
+            //var totalDuplication = duplicationFinder.FindDuplicates () ;
             
             return result;
         }

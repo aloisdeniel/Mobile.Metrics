@@ -230,7 +230,7 @@ namespace Mobile.Metrics.Analyzers.Files
                 
         public async Task<FileMetrics> Analyze(string path)
         {
-            if(IgnoredFiles.Any((s) =>  Path.GetFileName(path).Contains(s)))
+            if(IgnoredFiles.Any((s) =>  Path.GetFileName(path).Contains(s)) || !File.Exists(path))
             {
                 return null;
             }

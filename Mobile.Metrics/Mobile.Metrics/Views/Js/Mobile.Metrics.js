@@ -89,11 +89,16 @@ function main() {
 
     var commonProjectNamePrefix = sharedStart(projectNames);
 
-    if (commonProjectNamePrefix) {
-        for (var p in report.Metrics.Projects) {
-            var project = report.Metrics.Projects[p];
+    for (var p in report.Metrics.Projects) {
+        var project = report.Metrics.Projects[p];
+
+        if (commonProjectNamePrefix) {
             project.SimplifiedName = project.Name.replace(commonProjectNamePrefix, '');
+            console.log("Project " + project.Name + " > " + project.SimplifiedName)
         }
+        else {
+            project.SimplifiedName = project.Name;
+        }  
     }
 
     // Create view
@@ -400,7 +405,7 @@ function renderGraph(graph, colors) {
     renderLegend(graph, activeColors);
 }
 
-function renderLegend(graph, colors) {
+function createLegendViewModel(graph,colors) {
 
     var activeColors = colors;
 
@@ -413,78 +418,88 @@ function renderLegend(graph, colors) {
         header: {
             columns: []
         },
+        footer: {
+            header: "Total",
+            columns: []
+        },
         rows: []
     }
+
+    var footers = {};
 
     // Populating
     if (graph.graph === "bars") {
         
-        for(var p in graph.data)
-        {
-            var rowData = graph.data[p];
+        for (var yk in graph.ykeys) {
+            
+            footers[graph.ykeys[yk]] = 0;
             viewModel.header.columns.push({
-                value: rowData[graph.xkey]
+                value: graph.labels[yk]
             })
         }
-
-
-        for (var yk in graph.ykeys) {
-
-            var ykey = graph.ykeys[yk];
-            var color = activeColors[yk % activeColors.length];
-
+        
+        for(var p in graph.data) {
+            var rowData = graph.data[p];
             var row = {
-                id: ykey,
-                header: graph.labels[yk],
+                header: rowData[graph.xkey],
                 columns: []
-            };
+            }
 
-            for (var p in graph.data) {
-                    var rowData = graph.data[p];
-            
-                    var column = {
-                        value:   rowData[ykey],
-                        color: color
-                    };
-                    row.columns.push(column);
-               
+            for (var yk in graph.ykeys) {
+                var ykey = graph.ykeys[yk];
+                var column = {
+                    value: rowData[ykey],
+                    color: activeColors[yk % graph.ykeys.length]
+                };
+                footers[ykey] += column.value;
+                row.columns.push(column);
             }
 
             viewModel.rows.push(row);
         }
+
     }
     else if (graph.graph === "donut") {
 
-        for (var p in graph.data) {
+        viewModel.header.columns.push({
+            value: graph.label
+        })
+        footers.value = 0;
+
+        for(var p in graph.data) {
             var rowData = graph.data[p];
-            viewModel.header.columns.push({
-                value: rowData.label
-            })
-        }
-
-        var row = {
-            header: graph.label,
-            columns: []
-        };
-
-        for (var p in graph.data) {
-            var rowData = graph.data[p];
-            var color = activeColors[p % activeColors.length];
-
+            var row = {
+                header: rowData.label,
+                columns: []
+            }
             var column = {
                 value: rowData.value,
-                color: color
+                color: activeColors[p % activeColors.length]
             };
-            row.columns.push(column);
-        }
+            footers.value += column.value;
 
-        viewModel.rows.push(row);
+            row.columns.push(column);
+            viewModel.rows.push(row);
+        }
     }
     else
     {
-        return "";
+        return null;
     }
 
+    for(var f in footers)
+    {
+        viewModel.footer.columns.push({
+            value: footers[f]
+        });
+    }
+
+    return viewModel;
+}
+
+function renderLegend(graph, colors) {
+
+    var viewModel = createLegendViewModel(graph,colors);
 
     // Rendering view
 
@@ -492,6 +507,8 @@ function renderLegend(graph, colors) {
     Mustache.parse(template);
     var rendered = Mustache.render(template, viewModel);
     $('#'+graph.id).append(rendered);
+
+    
 }
 
 // Warnings ---->
@@ -559,6 +576,7 @@ function renderContentWarnings(data) {
         var warningVm = {
             index: file.warnings.length + 1,
             message: warning.Message,
+            method: warning.Method,
             level: "default",
             levelValue: warning.Level
         }
